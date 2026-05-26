@@ -1,0 +1,133 @@
+@import "tailwindcss";
+
+:root {
+  --background: #F0F3FC;
+  --foreground: #1E293B;
+  --font-sans: var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-plus-jakarta);
+}
+
+/* Custom scrollbars and styling for premium layout components */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #D8DEE9;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #C0C8D6;
+}
+
+/* Neumorphic shadow styling with subtle drop-shadows */
+.premium-shadow {
+  box-shadow: 0 8px 32px 0 rgba(142, 156, 198, 0.08),
+              0 2px 8px 0 rgba(142, 156, 198, 0.04);
+}
+
+.premium-card {
+  background: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 10px 30px -5px rgba(100, 110, 140, 0.05),
+              0 1px 3px -1px rgba(0, 0, 0, 0.02);
+  border-radius: 1.5rem;
+}
+
+.neon-glow-pink {
+  filter: drop-shadow(0 6px 16px rgba(255, 76, 145, 0.35));
+}
+
+.neon-glow-green {
+  filter: drop-shadow(0 6px 16px rgba(16, 185, 129, 0.25));
+}
+
+.transition-all-300 {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- Authentication & Page Animations --- */
+
+/* Floating background spheres */
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-25px) scale(1.08);
+  }
+}
+
+@keyframes float-medium {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-20px) translateX(20px) scale(1.12);
+  }
+}
+
+.animate-float-1 {
+  animation: float-slow 10s ease-in-out infinite;
+}
+
+.animate-float-2 {
+  animation: float-medium 14s ease-in-out infinite;
+}
+
+/* Smooth auth card entry */
+@keyframes slide-up-fade {
+  0% {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up-fade 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Success Checkmark Path Draw */
+@keyframes stroke-draw {
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-checkmark {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: stroke-draw 0.7s cubic-bezier(0.4, 0, 0.2, 1) 0.2s forwards;
+}
+
+/* Animated Pulse Glow for Success screen */
+@keyframes circle-pulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.3;
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 0.1;
+  }
+}
+
+.animate-pulse-glow {
+  animation: circle-pulse 3s ease-in-out infinite;
+}
