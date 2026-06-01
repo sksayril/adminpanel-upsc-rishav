@@ -19,6 +19,7 @@ import { VolumeDensityChart } from "@/components/dashboard/VolumeDensityChart";
 import { SlidersCard } from "@/components/dashboard/SlidersCard";
 import { ProgressListCard } from "@/components/dashboard/ProgressListCard";
 import { AppSettingsView } from "@/components/dashboard/AppSettingsView";
+import { getCategoryYearOptions } from "@/lib/categoryYears";
 
 export default function Home() {
   const router = useRouter();
@@ -63,6 +64,35 @@ export default function Home() {
   const [uploadStatus, setUploadStatus] = useState<"idle" | "uploading" | "success" | "error">("idle");
   const [uploadError, setUploadError] = useState<string>("");
   const [lastUploadedTitle, setLastUploadedTitle] = useState<string>("");
+
+  const clearCategoryDraft = () => {
+    setNewCatName("");
+    setNewCatYear("2026");
+    setNewCatYearMode("year");
+  };
+
+  const clearSubcategoryDraft = () => {
+    setNewSubName("");
+  };
+
+  const clearSubSubcategoryDraft = () => {
+    setNewSubSubName("");
+  };
+
+  const clearAllWizardDrafts = () => {
+    setNewMainMainName("");
+    clearCategoryDraft();
+    clearSubcategoryDraft();
+    clearSubSubcategoryDraft();
+  };
+
+  const advanceWizardStep = () => {
+    if (wizardStep === 1) setNewMainMainName("");
+    if (wizardStep === 2) clearCategoryDraft();
+    if (wizardStep === 3) clearSubcategoryDraft();
+    if (wizardStep === 4) clearSubSubcategoryDraft();
+    setWizardStep(wizardStep + 1);
+  };
 
   // Fetch hierarchical catalog tree
   const fetchCatalogTree = async () => {
@@ -428,6 +458,7 @@ export default function Home() {
   // 3. Wizard Creator Handlers
   const handleWizardCreateMainMainCategory = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (wizardStep !== 1) return;
     if (!newMainMainName) return;
     setActionLoading(true);
     try {
@@ -454,7 +485,8 @@ export default function Home() {
 
   const handleWizardCreateCategory = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCatName || !wizardMainMainId) return;
+    if (wizardStep !== 2) return;
+    if (!newCatName.trim() || !wizardMainMainId) return;
     // Year mode: must have a valid year selected; Text mode: must have non-empty text
     if (newCatYearMode === "year" && !newCatYear) return;
     if (newCatYearMode === "text" && !newCatYear.trim()) {
@@ -466,13 +498,17 @@ export default function Home() {
       const res = await fetch("/api/categories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newCatName, year: newCatYear, mainMainCategoryId: wizardMainMainId }),
+        body: JSON.stringify({
+          name: newCatName.trim(),
+          year: newCatYear.trim(),
+          mainMainCategoryId: wizardMainMainId,
+        }),
       });
       const data = await res.json();
       if (res.ok) {
-        toast.success(`Category "${newCatName} (${newCatYear})" created!`);
+        toast.success(`Category "${newCatName.trim()} (${newCatYear.trim()})" created!`);
         setWizardCatId(data.category._id);
-        setNewCatName("");
+        clearCategoryDraft();
         fetchCatalogTree();
       } else {
         toast.error(data.error || "Failed to create category");
@@ -486,19 +522,20 @@ export default function Home() {
 
   const handleWizardCreateSubcategory = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newSubName || !wizardCatId) return;
+    if (wizardStep !== 3) return;
+    if (!newSubName.trim() || !wizardCatId) return;
     setActionLoading(true);
     try {
       const res = await fetch("/api/subcategories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newSubName, categoryId: wizardCatId }),
+        body: JSON.stringify({ name: newSubName.trim(), categoryId: wizardCatId }),
       });
       const data = await res.json();
       if (res.ok) {
-        toast.success(`Subcategory "${newSubName}" created!`);
+        toast.success(`Subcategory "${newSubName.trim()}" created!`);
         setWizardSubId(data.subcategory._id);
-        setNewSubName("");
+        clearSubcategoryDraft();
         fetchCatalogTree();
       } else {
         toast.error(data.error || "Failed to create subcategory");
@@ -512,19 +549,20 @@ export default function Home() {
 
   const handleWizardCreateSubSubcategory = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newSubSubName || !wizardSubId) return;
+    if (wizardStep !== 4) return;
+    if (!newSubSubName.trim() || !wizardSubId) return;
     setActionLoading(true);
     try {
       const res = await fetch("/api/subsubcategories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newSubSubName, subcategoryId: wizardSubId }),
+        body: JSON.stringify({ name: newSubSubName.trim(), subcategoryId: wizardSubId }),
       });
       const data = await res.json();
       if (res.ok) {
-        toast.success(`Sub-subcategory "${newSubSubName}" created!`);
+        toast.success(`Sub-subcategory "${newSubSubName.trim()}" created!`);
         setWizardSubSubId(data.subSubcategory._id);
-        setNewSubSubName("");
+        clearSubSubcategoryDraft();
         fetchCatalogTree();
       } else {
         toast.error(data.error || "Failed to create sub-subcategory");
@@ -876,6 +914,9 @@ export default function Home() {
                               setWizardCatId("");
                               setWizardSubId("");
                               setWizardSubSubId("");
+                              clearCategoryDraft();
+                              clearSubcategoryDraft();
+                              clearSubSubcategoryDraft();
                             }}
                             className="w-full text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-3 outline-none focus:bg-white focus:border-[#5113C2] cursor-pointer"
                           >
@@ -922,12 +963,13 @@ export default function Home() {
                         {/* Creator */}
                         <div className="flex-1 flex flex-col gap-3">
                           <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Or Create New Main Main Category</label>
-                          <form onSubmit={handleWizardCreateMainMainCategory} className="flex flex-col gap-2">
+                          <form onSubmit={handleWizardCreateMainMainCategory} className="flex flex-col gap-2" autoComplete="off">
                             <input
                               type="text"
                               placeholder="Main Main Category name (e.g. UPSC, NCERT)"
                               value={newMainMainName}
                               onChange={(e) => setNewMainMainName(e.target.value)}
+                              autoComplete="off"
                               disabled={actionLoading}
                               className="w-full text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-3 outline-none focus:bg-white focus:border-[#5113C2]"
                             />
@@ -966,6 +1008,7 @@ export default function Home() {
                               setWizardCatId(e.target.value);
                               setWizardSubId("");
                               setWizardSubSubId("");
+                              clearCategoryDraft();
                             }}
                             className="w-full text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-3 outline-none focus:bg-white focus:border-[#5113C2] cursor-pointer"
                           >
@@ -1032,7 +1075,7 @@ export default function Home() {
                                     onChange={(e) => setRenameCatYear(e.target.value)}
                                     className="w-full text-[11px] font-bold text-slate-750 bg-white border border-slate-200/80 rounded-lg px-2.5 py-1.5 outline-none focus:border-[#5113C2] cursor-pointer"
                                   >
-                                    {Array.from({ length: 52 }, (_, i) => String(1999 + i)).map((yr) => (
+                                    {getCategoryYearOptions().map((yr) => (
                                       <option key={yr} value={yr}>{yr}</option>
                                     ))}
                                   </select>
@@ -1064,12 +1107,13 @@ export default function Home() {
                         {/* Creator */}
                         <div className="flex-1 flex flex-col gap-3">
                           <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Or Create New Category</label>
-                          <form onSubmit={handleWizardCreateCategory} className="flex flex-col gap-2">
+                          <form onSubmit={handleWizardCreateCategory} className="flex flex-col gap-2" autoComplete="off">
                             <input
                               type="text"
                               placeholder="Category name (e.g. GS Prelims)"
                               value={newCatName}
                               onChange={(e) => setNewCatName(e.target.value)}
+                              autoComplete="off"
                               disabled={actionLoading}
                               className="w-full text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-3 outline-none focus:bg-white focus:border-[#5113C2]"
                             />
@@ -1119,6 +1163,7 @@ export default function Home() {
                                 placeholder="Enter any label text (e.g. Phase 1, Prelims)"
                                 value={newCatYear}
                                 onChange={(e) => setNewCatYear(e.target.value)}
+                                autoComplete="off"
                                 disabled={actionLoading}
                                 className="w-full text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-3 outline-none focus:bg-white focus:border-[#5113C2]"
                               />
@@ -1126,10 +1171,11 @@ export default function Home() {
                               <select
                                 value={/^\d{4}$/.test(newCatYear) ? newCatYear : "2026"}
                                 onChange={(e) => setNewCatYear(e.target.value)}
+                                autoComplete="off"
                                 disabled={actionLoading}
                                 className="w-full text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-3 outline-none focus:bg-white focus:border-[#5113C2] cursor-pointer"
                               >
-                                {Array.from({ length: 52 }, (_, i) => String(1999 + i)).map((yr) => (
+                                {getCategoryYearOptions().map((yr) => (
                                   <option key={yr} value={yr}>{yr}</option>
                                 ))}
                               </select>
@@ -1176,6 +1222,7 @@ export default function Home() {
                             onChange={(e) => {
                               setWizardSubId(e.target.value);
                               setWizardSubSubId("");
+                              clearSubcategoryDraft();
                             }}
                             className="w-full text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-3 outline-none focus:bg-white focus:border-[#5113C2] cursor-pointer"
                           >
@@ -1220,12 +1267,13 @@ export default function Home() {
                         {/* Creator */}
                         <div className="flex-1 flex flex-col gap-3">
                           <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">{`Or Create New Subcategory under ${wizardCategories.find((c: any) => c._id === wizardCatId)?.name}`}</label>
-                          <form onSubmit={handleWizardCreateSubcategory} className="flex gap-2">
+                          <form onSubmit={handleWizardCreateSubcategory} className="flex gap-2" autoComplete="off">
                             <input
                               type="text"
                               placeholder="Subcategory name (e.g. History)"
                               value={newSubName}
                               onChange={(e) => setNewSubName(e.target.value)}
+                              autoComplete="off"
                               disabled={actionLoading}
                               className="flex-1 text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-3 outline-none focus:bg-white focus:border-[#5113C2]"
                             />
@@ -1262,7 +1310,10 @@ export default function Home() {
                           <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Select Sub-Subcategory</label>
                           <select
                             value={wizardSubSubId}
-                            onChange={(e) => setWizardSubSubId(e.target.value)}
+                            onChange={(e) => {
+                              setWizardSubSubId(e.target.value);
+                              clearSubSubcategoryDraft();
+                            }}
                             className="w-full text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-3 outline-none focus:bg-white focus:border-[#5113C2] cursor-pointer"
                           >
                             <option value="">-- Choose Sub-Subcategory --</option>
@@ -1306,12 +1357,13 @@ export default function Home() {
                         {/* Creator */}
                         <div className="flex-1 flex flex-col gap-3">
                           <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">{`Or Create New Sub-Subcategory under ${wizardSubcategories.find((s: any) => s._id === wizardSubId)?.name}`}</label>
-                          <form onSubmit={handleWizardCreateSubSubcategory} className="flex gap-2">
+                          <form onSubmit={handleWizardCreateSubSubcategory} className="flex gap-2" autoComplete="off">
                             <input
                               type="text"
                               placeholder="Sub-sub name (e.g. Modern India)"
                               value={newSubSubName}
                               onChange={(e) => setNewSubSubName(e.target.value)}
+                              autoComplete="off"
                               disabled={actionLoading}
                               className="flex-1 text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-3 outline-none focus:bg-white focus:border-[#5113C2]"
                             />
@@ -1348,11 +1400,13 @@ export default function Home() {
                                 <p className="text-[10px] text-slate-400 font-medium leading-relaxed">Browse a PDF document to upload. File details are saved to MongoDB metadata.</p>
                               </div>
 
-                              <form 
+                              <form
+                                autoComplete="off"
                                 onSubmit={(e) => {
                                   e.preventDefault();
-                                  if (!pdfFile || !docTitle || !wizardSubSubId) return;
-                                  
+                                  if (!pdfFile || !docTitle.trim() || !wizardSubSubId) return;
+
+                                  clearAllWizardDrafts();
                                   setActionLoading(true);
                                   setUploadProgress(0);
                                   setUploadStatus("uploading");
@@ -1361,7 +1415,7 @@ export default function Home() {
 
                                   const formData = new FormData();
                                   formData.append("file", pdfFile);
-                                  formData.append("title", docTitle);
+                                  formData.append("title", docTitle.trim());
                                   formData.append("description", docDescription);
                                   formData.append("subSubcategoryId", wizardSubSubId);
 
@@ -1423,6 +1477,7 @@ export default function Home() {
                                     placeholder="Ex: GS Prelims Guide 2026"
                                     value={docTitle}
                                     onChange={(e) => setDocTitle(e.target.value)}
+                                    autoComplete="off"
                                     disabled={actionLoading}
                                     className="w-full text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200/80 rounded-xl px-3.5 py-2.5 outline-none focus:bg-white focus:border-[#5113C2] transition-all"
                                   />
@@ -1435,6 +1490,7 @@ export default function Home() {
                                     placeholder="Details about file content"
                                     value={docDescription}
                                     onChange={(e) => setDocDescription(e.target.value)}
+                                    autoComplete="off"
                                     disabled={actionLoading}
                                     className="w-full text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200/80 rounded-xl px-3.5 py-2.5 outline-none focus:bg-white focus:border-[#5113C2] transition-all"
                                   />
@@ -1450,9 +1506,10 @@ export default function Home() {
                                       const file = e.target.files?.[0];
                                       if (file) {
                                         setPdfFile(file);
-                                        // Auto-populate PDF Title if it is currently empty
-                                        if (!docTitle) {
-                                          const fileNameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+                                        // Suggest PDF title from filename only (never touches category create fields)
+                                        if (!docTitle.trim()) {
+                                          const fileNameWithoutExt =
+                                            file.name.substring(0, file.name.lastIndexOf(".")) || file.name;
                                           const cleanName = fileNameWithoutExt
                                             .replace(/[_-]/g, " ")
                                             .trim()
@@ -1664,7 +1721,8 @@ export default function Home() {
 
                   {wizardStep < 5 ? (
                     <button
-                      onClick={() => setWizardStep(wizardStep + 1)}
+                      type="button"
+                      onClick={advanceWizardStep}
                       disabled={
                         (wizardStep === 1 && !wizardMainMainId) ||
                         (wizardStep === 2 && !wizardCatId) ||
@@ -1678,11 +1736,17 @@ export default function Home() {
                     </button>
                   ) : (
                     <button
+                      type="button"
                       onClick={() => {
                         setWizardMainMainId("");
                         setWizardCatId("");
                         setWizardSubId("");
                         setWizardSubSubId("");
+                        clearAllWizardDrafts();
+                        setDocTitle("");
+                        setDocDescription("");
+                        setPdfFile(null);
+                        setUploadStatus("idle");
                         setWizardStep(1);
                       }}
                       className="bg-slate-100 hover:bg-slate-200 text-slate-655 text-xs font-extrabold px-6 py-3.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
