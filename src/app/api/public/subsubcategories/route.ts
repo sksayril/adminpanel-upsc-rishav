@@ -44,7 +44,7 @@ export async function GET(req: Request) {
     }
 
     const data = await SubSubcategory.find({ subcategory: subcategoryId })
-      .sort({ createdAt: 1 })
+      .sort({ createdAt: -1 })
       .select("_id name createdAt")
       .lean();
 
