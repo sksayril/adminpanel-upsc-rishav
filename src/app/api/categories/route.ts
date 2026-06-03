@@ -70,7 +70,7 @@ export async function POST(req: Request) {
   try {
     const { name, year, mainMainCategoryId } = await req.json();
 
-    if (!name || !year || !mainMainCategoryId) {
+    if (!name || year === undefined || !mainMainCategoryId) {
       return NextResponse.json(
         { error: "Category name, year, and parent Main Main Category ID are required." },
         { status: 400 }
@@ -111,7 +111,7 @@ export async function POST(req: Request) {
 export async function PUT(req: Request) {
   try {
     const { id, name, year } = await req.json();
-    if (!id || !name || !year) {
+    if (!id || !name || year === undefined) {
       return NextResponse.json(
         { error: "ID, name, and year are required." },
         { status: 400 }

@@ -10,7 +10,7 @@ export interface ICategory extends Document {
 const CategorySchema: Schema<ICategory> = new Schema(
   {
     name: { type: String, required: true, trim: true },
-    year: { type: String, required: true, trim: true },
+    year: { type: String, default: "", trim: true },
     mainMainCategory: { type: Schema.Types.ObjectId, ref: "MainMainCategory", required: true },
   },
   { timestamps: { createdAt: true, updatedAt: false } }

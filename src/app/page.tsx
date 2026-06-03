@@ -236,7 +236,7 @@ export default function Home() {
   };
 
   const handleRenameCategory = async (id: string, name: string, year: string) => {
-    if (!name || !year) return;
+    if (!name) return;
     setActionLoading(true);
     try {
       const res = await fetch("/api/categories", {
@@ -246,7 +246,8 @@ export default function Home() {
       });
       const data = await res.json();
       if (res.ok) {
-        toast.success(`Category renamed to "${name} (${year})"`);
+        const displayYear = year.trim() ? ` (${year.trim()})` : "";
+        toast.success(`Category renamed to "${name}${displayYear}"`);
         fetchCatalogTree();
       } else {
         toast.error(data.error || "Failed to rename category");
@@ -487,12 +488,9 @@ export default function Home() {
     e.preventDefault();
     if (wizardStep !== 2) return;
     if (!newCatName.trim() || !wizardMainMainId) return;
-    // Year mode: must have a valid year selected; Text mode: must have non-empty text
-    if (newCatYearMode === "year" && !newCatYear) return;
-    if (newCatYearMode === "text" && !newCatYear.trim()) {
-      toast.error("Please enter a label text for the category.");
-      return;
-    }
+    // Year mode: must have a valid year selected; Text mode: year is empty string
+    const finalYear = newCatYearMode === "year" ? newCatYear.trim() : "";
+    if (newCatYearMode === "year" && !finalYear) return;
     setActionLoading(true);
     try {
       const res = await fetch("/api/categories", {
@@ -500,13 +498,14 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: newCatName.trim(),
-          year: newCatYear.trim(),
+          year: finalYear,
           mainMainCategoryId: wizardMainMainId,
         }),
       });
       const data = await res.json();
       if (res.ok) {
-        toast.success(`Category "${newCatName.trim()} (${newCatYear.trim()})" created!`);
+        const displayYear = finalYear ? ` (${finalYear})` : "";
+        toast.success(`Category "${newCatName.trim()}${displayYear}" created!`);
         setWizardCatId(data.category._id);
         clearCategoryDraft();
         fetchCatalogTree();
@@ -657,7 +656,7 @@ export default function Home() {
                                 <summary className="flex items-center justify-between cursor-pointer py-1 text-xs font-bold text-slate-650 hover:text-slate-850 list-none">
                                   <div className="flex items-center gap-2 flex-1 min-w-0">
                                     <span className="w-2.5 h-2.5 rounded-md bg-[#FF6B6B]/20 border border-[#FF6B6B]/50 flex items-center justify-center font-bold text-[8px] text-[#FF6B6B] flex-shrink-0">C</span>
-                                    <span className="truncate">{cat.name} ({cat.year})</span>
+                                    <span className="truncate">{cat.name}{cat.year ? ` (${cat.year})` : ""}</span>
                                   </div>
                                   
                                   <div className="flex items-center gap-1.5 opacity-0 group-hover/cat:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
@@ -665,8 +664,8 @@ export default function Home() {
                                       onClick={() => {
                                         const newName = prompt("Rename category name:", cat.name);
                                         if (newName && newName.trim()) {
-                                          const newYear = prompt("Rename category year:", cat.year);
-                                          if (newYear && newYear.trim()) {
+                                          const newYear = prompt("Rename category year (leave empty for no year):", cat.year || "");
+                                          if (newYear !== null) {
                                             handleRenameCategory(cat._id, newName.trim(), newYear.trim());
                                           }
                                         }
@@ -1014,7 +1013,7 @@ export default function Home() {
                           >
                             <option value="">-- Choose Category --</option>
                             {wizardCategories.map((c: any) => (
-                              <option key={c._id} value={c._id}>{c.name} ({c.year})</option>
+                              <option key={c._id} value={c._id}>{c.name}{c.year ? ` (${c.year})` : ""}</option>
                             ))}
                           </select>
 
@@ -1061,15 +1060,7 @@ export default function Home() {
                                   </label>
                                 </div>
 
-                                {renameCatYearMode === "text" ? (
-                                  <input
-                                    type="text"
-                                    placeholder="Rename year or text"
-                                    value={renameCatYear}
-                                    onChange={(e) => setRenameCatYear(e.target.value)}
-                                    className="w-full text-[11px] font-bold text-slate-700 bg-white border border-slate-200/80 rounded-lg px-2.5 py-1.5 outline-none focus:border-[#5113C2]"
-                                  />
-                                ) : (
+                                {renameCatYearMode === "year" && (
                                   <select
                                     value={/^\d{4}$/.test(renameCatYear) ? renameCatYear : "2026"}
                                     onChange={(e) => setRenameCatYear(e.target.value)}
@@ -1084,7 +1075,7 @@ export default function Home() {
                                 <div className="flex gap-2">
                                   <button
                                     type="button"
-                                    onClick={() => handleRenameCategory(wizardCatId, renameCatName, renameCatYear)}
+                                    onClick={() => handleRenameCategory(wizardCatId, renameCatName, renameCatYearMode === "text" ? "" : renameCatYear)}
                                     className="flex-1 bg-[#5113C2] hover:bg-[#42169B] text-white text-[10px] font-bold py-1.5 rounded-lg transition-colors cursor-pointer text-center"
                                   >
                                     Rename
@@ -1157,17 +1148,7 @@ export default function Home() {
                               </label>
                             </div>
 
-                            {newCatYearMode === "text" ? (
-                              <input
-                                type="text"
-                                placeholder="Enter any label text (e.g. Phase 1, Prelims)"
-                                value={newCatYear}
-                                onChange={(e) => setNewCatYear(e.target.value)}
-                                autoComplete="off"
-                                disabled={actionLoading}
-                                className="w-full text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-3 outline-none focus:bg-white focus:border-[#5113C2]"
-                              />
-                            ) : (
+                            {newCatYearMode === "year" && (
                               <select
                                 value={/^\d{4}$/.test(newCatYear) ? newCatYear : "2026"}
                                 onChange={(e) => setNewCatYear(e.target.value)}
@@ -1186,7 +1167,6 @@ export default function Home() {
                               disabled={
                                 actionLoading ||
                                 !newCatName ||
-                                (newCatYearMode === "text" && !newCatYear.trim()) ||
                                 (newCatYearMode === "year" && !newCatYear)
                               }
                               className="w-full bg-[#5113C2] hover:bg-[#42169B] text-white text-xs font-bold py-3 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
@@ -1205,7 +1185,7 @@ export default function Home() {
                       <div className="bg-[#5113C2]/5 border border-[#5113C2]/10 rounded-xl px-4 py-2 flex items-center gap-2 text-[10px] font-extrabold text-[#7B3FE4] uppercase">
                         <span>Path:</span>
                         <span className="text-slate-500 font-sans font-semibold">
-                          {catalogTree.find(m => m._id === wizardMainMainId)?.name} &gt; {wizardCategories.find((c: any) => c._id === wizardCatId)?.name} ({wizardCategories.find((c: any) => c._id === wizardCatId)?.year})
+                          {catalogTree.find(m => m._id === wizardMainMainId)?.name} &gt; {wizardCategories.find((c: any) => c._id === wizardCatId)?.name}{wizardCategories.find((c: any) => c._id === wizardCatId)?.year ? ` (${wizardCategories.find((c: any) => c._id === wizardCatId)?.year})` : ""}
                         </span>
                       </div>
                       <div>
