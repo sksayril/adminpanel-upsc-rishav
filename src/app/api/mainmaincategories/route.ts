@@ -9,7 +9,7 @@ import DocumentModel from "@/models/Document";
 export async function GET() {
   try {
     await connectToDatabase();
-    const mainMainCategories = await MainMainCategory.find({}).sort({ name: 1 });
+    const mainMainCategories = await MainMainCategory.find({}).sort({ createdAt: 1 });
     return NextResponse.json({ success: true, mainMainCategories }, { status: 200 });
   } catch (error: any) {
     console.error("GET mainmaincategories error:", error);

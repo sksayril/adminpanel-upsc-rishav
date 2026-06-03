@@ -44,7 +44,7 @@ export async function GET(req: Request) {
     }
 
     const data = await DocumentModel.find({ subSubcategory: subSubcategoryId })
-      .sort({ title: 1 })
+      .sort({ createdAt: 1 })
       .select("_id title description pdfUrl createdAt")
       .lean();
 

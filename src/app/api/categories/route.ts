@@ -10,11 +10,11 @@ export async function GET() {
   try {
     await connectToDatabase();
 
-    const mainMainCategories = await MainMainCategory.find({}).sort({ name: 1 });
-    const categories = await Category.find({}).sort({ name: 1 });
-    const subcategories = await Subcategory.find({}).sort({ name: 1 });
-    const subSubcategories = await SubSubcategory.find({}).sort({ name: 1 });
-    const documents = await DocumentModel.find({}).sort({ title: 1 });
+    const mainMainCategories = await MainMainCategory.find({}).sort({ createdAt: 1 });
+    const categories = await Category.find({}).sort({ createdAt: 1 });
+    const subcategories = await Subcategory.find({}).sort({ createdAt: 1 });
+    const subSubcategories = await SubSubcategory.find({}).sort({ createdAt: 1 });
+    const documents = await DocumentModel.find({}).sort({ createdAt: 1 });
 
     // Assemble the nested catalog tree in memory
     const tree = mainMainCategories.map((mm) => {

@@ -13,7 +13,7 @@ export async function GET() {
     await connectToDatabase();
 
     const data = await MainMainCategory.find({})
-      .sort({ name: 1 })
+      .sort({ createdAt: 1 })
       .select("_id name createdAt")
       .lean();
 
