@@ -44,7 +44,7 @@ export async function GET(req: Request) {
     }
 
     const data = await Category.find({ mainMainCategory: mainMainCategoryId })
-      .sort({ createdAt: 1 })
+      .sort({ createdAt: -1 })
       .select("_id name year createdAt")
       .lean();
 
